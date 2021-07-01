@@ -1,11 +1,19 @@
-import { Card, Paper, Grid, makeStyles } from "@material-ui/core";
+import {
+  Card,
+  Grid,
+  makeStyles,
+  CardHeader,
+  Avatar,
+  IconButton,
+  Button,
+} from "@material-ui/core";
 import React, { useCallback, useEffect, useState } from "react";
 import { firestore } from "../../api/firebase/firebase";
 
 import Article from "./Article";
 import { Pagination } from "@material-ui/lab";
 import { Articles, Page } from "../../util/types";
-import { isConstructorDeclaration } from "typescript";
+import { useHistory } from "react-router";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -36,24 +44,21 @@ const ArticleList = () => {
   const classes = useStyles();
 
   const [pageNum, setPageNum] = useState<number>(1);
-  const [pageInfo, setPageInfo] = useState<Page>({
-    startPage: 1,
-    endPage: 1,
-    prev: false,
-    next: false,
-    total: 0,
-  });
+  const [pageInfo, setPageInfo] = useState<Page>();
 
   const [articles, setArticles] = useState<Articles[]>();
   const [expanded, setExpanded] = useState<string | false>(false);
-
+  const history = useHistory();
+  const toWrite = () =>{
+    history.push("/write")
+  }
   /**
   firebase
  */
   const fetchData = useCallback(() => {
     // 받아온 데이터를 저장할 배열
     let tasksData: Articles[] = [];
-
+    console.log("fetching articles");
     // firestore.js에서 가져온 firestore 객체
     firestore
       .collection("faqs") //  "tasks" 컬렉션 반환
@@ -75,24 +80,23 @@ const ArticleList = () => {
   }, [pageNum]);
   const fetchTotalDocs = async () => {
     console.log("fetching page data");
-    let data
+    let data: number;
     await firestore
       .collection("faqs")
       .doc("total")
       // .collection("total")
       .get()
       .then((docs) => {
-        data = docs.data()
+        data = docs?.data()?.count;
+        let newPageInfo: Page = {
+          total: data,
+          startPage: 1,
+          endPage: Math.round(data / 10) + 1,
+          prev: false,
+          next: false,
+        };
+        setPageInfo((pre) => newPageInfo);
       });
-
-    let newPageInfo:Page = {
-      total:data.count,
-      startPage: 1,
-      endPage: Math.round(data.count/10),
-      prev: false,
-      next: false,
-    }
-    console.log(newPageInfo)
   };
   // 최초 렌더링 이후에 실행하기 위해 useEffect 내부에서 함수 실행
   useEffect(() => {
@@ -102,7 +106,22 @@ const ArticleList = () => {
 
   return (
     <>
-      <Card style={{ width: "1024px", margin: "auto" }}>
+      <div style={{ minHeight: "50px", width: "1024px", margin: "auto" }}>
+        <Button
+          variant="outlined"
+          style={{
+            float: "right",
+            borderColor: "green",
+            color:"green"
+          }}
+          onClick={toWrite}
+
+        >
+          새 매뉴얼 추가
+        </Button>
+      </div>
+
+      <Card style={{ maxWidth: "1024px", margin: "auto" }}>
         {articles &&
           articles.map((article: Articles) => {
             return (

@@ -115,6 +115,9 @@ const Header = () => {
       console.log("error:", error);
     });
   }
+
+  
+  
   return (
     <div className={classes.grow}>
       <AppBar className={classes.appBar} position="static">
