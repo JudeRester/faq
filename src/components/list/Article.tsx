@@ -3,7 +3,7 @@ import { withStyles } from "@material-ui/core/styles";
 import MuiAccordion from "@material-ui/core/Accordion";
 import MuiAccordionSummary from "@material-ui/core/AccordionSummary";
 import MuiAccordionDetails from "@material-ui/core/AccordionDetails";
-import { AccordionActions, Button } from "@material-ui/core";
+import { AccordionActions, Button } from "@material-ui/core"
 import Typography from "@material-ui/core/Typography";
 import { ArticleProps } from "../../util/types";
 import { ExpandMore } from "@material-ui/icons";
@@ -51,16 +51,14 @@ const AccordionDetails = withStyles((theme) => ({
 
 const Article = (props: ArticleProps) => {
   //   const [expanded, setExpanded] = useState<string | false>(props.title);
-  const setExpanded = props.setExpanded;
-  const handleChange =
-    (panel: string) => (event: React.ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : false);
-    };
+  const setExpanded = props.setExpanded
+  const handleChange = (panel: string) => (event: React.ChangeEvent<{}>, newExpanded: boolean) => {
+    setExpanded(newExpanded ? panel : false);
+  };
   return (
-    <Accordion
-      square
-      expanded={props.expanded === props.title}
-      onChange={handleChange(props.title)}
+    <Accordion square 
+    expanded={props.expanded === props.title}
+    onChange={handleChange(props.title)}
     >
       <AccordionSummary
         expandIcon={<ExpandMore />}
@@ -71,14 +69,14 @@ const Article = (props: ArticleProps) => {
       </AccordionSummary>
       <AccordionDetails>
         <Typography>
-          <pre>{props.content}</pre>
+           <div dangerouslySetInnerHTML={{__html:{props.content}}}></div>
         </Typography>
       </AccordionDetails>
       <AccordionActions>
-        <Button variant="outlined" size="small" color="secondary">
-          수정
-        </Button>
-      </AccordionActions>
+          <Button variant="outlined" size="small" color="secondary">
+            수정
+          </Button>
+        </AccordionActions>
     </Accordion>
   );
 };
