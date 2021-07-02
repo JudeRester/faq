@@ -49,35 +49,47 @@ const ArticleList = () => {
   const [articles, setArticles] = useState<Articles[]>();
   const [expanded, setExpanded] = useState<string | false>(false);
   const history = useHistory();
-  const toWrite = () =>{
-    history.push("/write")
-  }
+  const toWrite = () => {
+    history.push("/write");
+  };
   /**
   firebase
  */
-  const fetchData = useCallback(() => {
+  const fetchData = async () => {
     // 받아온 데이터를 저장할 배열
     let tasksData: Articles[] = [];
-    console.log("fetching articles");
-    // firestore.js에서 가져온 firestore 객체
-    firestore
-      .collection("faqs") //  "tasks" 컬렉션 반환
-      .orderBy("createDate")
-      .startAfter((pageNum - 1) * 10 + 1)
-      .limit(10)
-      .get() // "tasks" 컬렉션의 모든 다큐먼트를 갖는 프로미스 반환
-      .then((docs) => {
-        // forEach 함수로 각각의 다큐먼트에 함수 실행
-        docs.forEach((doc) => {
-          // data(), id로 다큐먼트 필드, id 조회
-          tasksData.push({ ...doc.data().article });
+    let last:number =0;
+    (await function () {
+      let limit = (pageNum-1) * 10+1
+      // let limit =10
+      firestore
+        .collection("faqs")
+        .orderBy("createDate")
+        .startAt(0)
+        .limit(limit)
+        .get()
+        .then((docs) => {
+          last = pageNum===1?1 : docs.docs[docs.docs.length - 1].data()?.createDate;
+          firestore
+          .collection("faqs") //  "faqs" 컬렉션 반환
+          .orderBy("createDate")
+          .startAt(last)
+          .limit(10)
+          .get() // "faqs" 컬렉션의 모든 다큐먼트를 갖는 프로미스 반환
+          .then((docs) => {
+            // forEach 함수로 각각의 다큐먼트에 함수 실행
+            docs.forEach((doc) => {
+              // data(), id로 다큐먼트 필드, id 조회
+              tasksData.push({ ...doc.data().article });
+            });
+            // articles state에 받아온 데이터 추가
+            setArticles((prevTasks) => tasksData);
+          });
         });
-
-        // console.log(tasksData);
-        // tasks state에 받아온 데이터 추가
-        setArticles((prevTasks) => tasksData);
-      });
-  }, [pageNum]);
+    })();
+    // firestore.js에서 가져온 firestore 객체
+  
+  };
   const fetchTotalDocs = async () => {
     console.log("fetching page data");
     let data: number;
@@ -91,7 +103,7 @@ const ArticleList = () => {
         let newPageInfo: Page = {
           total: data,
           startPage: 1,
-          endPage: Math.round(data / 10) + 1,
+          endPage: Math.ceil(data / 10),
           prev: false,
           next: false,
         };
@@ -104,18 +116,21 @@ const ArticleList = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    fetchData();
+  }, [pageNum]);
+
   return (
     <>
-      <div style={{ minHeight: "50px", width: "1024px", margin: "auto" }}>
+      <div style={{ minHeight: "50px", maxWidth: "1024px", margin: "auto" }}>
         <Button
           variant="outlined"
           style={{
             float: "right",
             borderColor: "green",
-            color:"green"
+            color: "green",
           }}
           onClick={toWrite}
-
         >
           새 매뉴얼 추가
         </Button>

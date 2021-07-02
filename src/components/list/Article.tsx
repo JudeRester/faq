@@ -55,6 +55,7 @@ const Article = (props: ArticleProps) => {
   const handleChange = (panel: string) => (event: React.ChangeEvent<{}>, newExpanded: boolean) => {
     setExpanded(newExpanded ? panel : false);
   };
+
   return (
     <Accordion square 
     expanded={props.expanded === props.title}
@@ -69,7 +70,7 @@ const Article = (props: ArticleProps) => {
       </AccordionSummary>
       <AccordionDetails>
         <Typography>
-           <div dangerouslySetInnerHTML={{__html:{props.content}}}></div>
+           <div dangerouslySetInnerHTML={{__html:props.content}}></div>
         </Typography>
       </AccordionDetails>
       <AccordionActions>
