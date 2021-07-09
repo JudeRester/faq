@@ -9,33 +9,77 @@ import { useHistory } from "react-router";
  * firebase
  */
 import { firestore } from "../../api/firebase/firebase";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 const WriteForm = () => {
   const [content, setContent] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const history = useHistory();
-  const submit = () => {
-    
-    firestore.collection("faqs").doc(uuidv4()).set({
-      createDate: new Date().getTime(),
-      article:{
-        title,
-        content,
-        version:1,
-        newest:true
-      }
-    }).then(()=>{
-      history.replace("/")
-    }).catch((error)=>{
-      console.error("error : ",error)
-    })
-    console.log(title, content);
+
+  /**
+   * 게시글 작성 메소드
+   *
+   */
+  // const submit = async () => {
+  //   firestore
+  //     .collection("faqs")
+  //     .doc(uuidv4())
+  //     .set({
+  //       createDate: new Date().getTime(),
+  //       article: {
+  //         title,
+  //         content,
+  //         version: 1,
+  //         newest: true,
+  //       },
+  //     })
+  //     .then(() => {
+  //       history.replace("/");
+  //     })
+  //     .catch((error) => {
+  //       console.error("error : ", error);
+  //     });
+  //   console.log(title, content);
+  // };
+
+  const submitTransaction = async () => {
+    await firestore
+      .runTransaction(async (transaction) => {
+        const res = await transaction.get(
+          firestore.collection("faqs").doc("total")
+        );
+        if (!res.exists) {
+          throw "Document does not exist";
+        }
+        // 기존 게시글 갯수를 가져와서 + 1
+        const newTotal = res.data()?.count + 1;
+        // 게시글 갯수 업데이트
+        transaction.update(firestore.collection("faqs").doc("total"), {
+          count: newTotal,
+        });
+        // 게시글 추가
+        transaction.set(firestore.collection("faqs").doc(uuidv4()), {
+          createDate: new Date().getTime(),
+          article: {
+            title,
+            content,
+            version: 1,
+            newest: true,
+          },
+        });
+      })
+      //트랜잭션 완료 후 메인화면으로 이동
+      .then(() => {
+        history.replace("/");
+      })
+      .catch((error) => {
+        console.error("error : ", error);
+      });
   };
 
-  const cancel = () =>{
-    history.goBack()
-  }
+  const cancel = () => {
+    history.goBack();
+  };
   const modules = {
     toolbar: [
       //[{ 'font': [] }],
@@ -98,6 +142,7 @@ const WriteForm = () => {
             marginBottom: "20px",
             backgroundColor: "white",
           }}
+          value={content || ""}
           onChange={(content, delta, source, editor) =>
             setContent(editor.getHTML())
           }
@@ -105,7 +150,7 @@ const WriteForm = () => {
           modules={modules}
           formats={formats}
         />
-        <div style={{ textAlignLast:"center" }}>
+        <div style={{ textAlignLast: "center" }}>
           <Button
             style={{
               marginLeft: "auto",
@@ -114,7 +159,8 @@ const WriteForm = () => {
             }}
             variant="outlined"
             color="primary"
-            onClick={submit}
+            // onClick={submit}
+            onClick={submitTransaction}
           >
             저장
           </Button>
