@@ -20,6 +20,8 @@ export type Page = {
   prev: false;
   next: false;
   total: number;
+  lastArticle: number;
+  pageNum:number;
 };
 
 export type Faqs = { 

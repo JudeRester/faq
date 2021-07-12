@@ -43,8 +43,16 @@ const useStyles = makeStyles(() => ({
 const ArticleList = () => {
   const classes = useStyles();
 
-  const [pageNum, setPageNum] = useState<number>(1);
-  const [pageInfo, setPageInfo] = useState<Page>();
+  // const [pageNum, setPageNum] = useState<number>(1);
+  const [pageInfo, setPageInfo] = useState<Page>({
+    total: 0,
+    startPage: 1,
+    endPage: Math.ceil(0 / 10),
+    prev: false,
+    next: false,
+    lastArticle: 0,
+    pageNum: 1,
+  });
 
   const [articles, setArticles] = useState<Articles[]>();
   const [expanded, setExpanded] = useState<string | false>(false);
@@ -58,37 +66,44 @@ const ArticleList = () => {
   const fetchData = async () => {
     // 받아온 데이터를 저장할 배열
     let tasksData: Articles[] = [];
-    let last:number =0;
-    (await function () {
-      let limit = (pageNum-1) * 10+1
-      // let limit =10
-      firestore
-        .collection("faqs")
-        .orderBy("createDate")
-        .startAt(0)
-        .limit(limit)
-        .get()
-        .then((docs) => {
-          last = pageNum===1?1 : docs.docs[docs.docs.length - 1].data()?.createDate;
-          firestore
-          .collection("faqs") //  "faqs" 컬렉션 반환
-          .orderBy("createDate")
-          .startAt(last)
-          .limit(10)
-          .get() // "faqs" 컬렉션의 모든 다큐먼트를 갖는 프로미스 반환
+    let last: number = 0;
+    (
+      await function () {
+        console.log(pageInfo?.pageNum);
+        let limit = (pageInfo?.pageNum - 1) * 10 + 1;
+        // let limit =10
+        firestore
+          .collection("faqs")
+          .orderBy("createDate", "desc")
+          .startAt(pageInfo?.lastArticle)
+          .limit(limit)
+          .get()
           .then((docs) => {
-            // forEach 함수로 각각의 다큐먼트에 함수 실행
-            docs.forEach((doc) => {
-              // data(), id로 다큐먼트 필드, id 조회
-              tasksData.push({ ...doc.data().article });
-            });
-            // articles state에 받아온 데이터 추가
-            setArticles((prevTasks) => tasksData);
+            last =
+              pageInfo.pageNum === 1
+                ? pageInfo.lastArticle
+                : docs.docs[docs.docs.length - 1].data()?.createDate;
+            firestore
+              .collection("faqs") //  "faqs" 컬렉션 반환
+              .orderBy("createDate", "desc")
+              //.startAt(pageInfo?.lastArticle)
+              // .orderBy("createDate")
+              .startAt(last)
+              .limit(10)
+              .get() // "faqs" 컬렉션의 모든 다큐먼트를 갖는 프로미스 반환
+              .then((docs) => {
+                // forEach 함수로 각각의 다큐먼트에 함수 실행
+                docs.forEach((doc) => {
+                  // data(), id로 다큐먼트 필드, id 조회
+                  tasksData.push({ ...doc.data().article });
+                });
+                // articles state에 받아온 데이터 추가
+                setArticles((prevTasks) => tasksData);
+              });
           });
-        });
-    })();
+      }
+    )();
     // firestore.js에서 가져온 firestore 객체
-  
   };
   const fetchTotalDocs = async () => {
     console.log("fetching page data");
@@ -106,6 +121,8 @@ const ArticleList = () => {
           endPage: Math.ceil(data / 10),
           prev: false,
           next: false,
+          lastArticle: docs?.data()?.lastArticle,
+          pageNum: 1,
         };
         setPageInfo((pre) => newPageInfo);
       });
@@ -113,12 +130,23 @@ const ArticleList = () => {
   // 최초 렌더링 이후에 실행하기 위해 useEffect 내부에서 함수 실행
   useEffect(() => {
     fetchTotalDocs();
-    fetchData();
+    // fetchData();
   }, []);
 
   useEffect(() => {
     fetchData();
-  }, [pageNum]);
+  }, [pageInfo]);
+
+  const setPageNum = (page: number) => {
+    setPageInfo((pre: Page) => {
+      const newPageInfo = { ...pre };
+      newPageInfo.pageNum = page;
+      return newPageInfo;
+    });
+  };
+  // useEffect(() => {
+  //   fetchData();
+  // }, [pageNum]);
 
   return (
     <>
@@ -156,7 +184,7 @@ const ArticleList = () => {
             // hideNextButton={true}
             // hidePrevButton={true}
             count={pageInfo.endPage}
-            page={pageNum}
+            page={pageInfo.pageNum}
             onChange={(e: React.ChangeEvent<unknown>, value: number) => {
               setPageNum(value);
             }}
